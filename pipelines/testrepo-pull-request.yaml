@@ -1,4 +1,4 @@
-# Konflux build pipeline for pushes to main (Pipelines-as-Code).
+# Konflux build pipeline for pull requests (Pipelines-as-Code).
 # The mirror workflow (.github/workflows/mirror-to-testrepo.yaml) transforms this file
 # into the public-sample layout under pipelines/ when mirroring to konflux-ci/testrepo.
 # See .github/scripts/mirror/prepare-staging.sh for the full transform chain.
@@ -8,16 +8,17 @@ metadata:
   annotations:
     build.appstudio.openshift.io/repo: ""
     build.appstudio.redhat.com/commit_sha: '{{revision}}'
+    build.appstudio.redhat.com/pull_request_number: '{{pull_request_number}}'
     build.appstudio.redhat.com/target_branch: '{{target_branch}}'
-    pipelinesascode.tekton.dev/cancel-in-progress: "false"
+    pipelinesascode.tekton.dev/cancel-in-progress: "true"
     pipelinesascode.tekton.dev/max-keep-runs: "3"
-    pipelinesascode.tekton.dev/on-cel-expression: event == "push" && target_branch == "main"
+    pipelinesascode.tekton.dev/on-cel-expression: event == "pull_request" && target_branch == "main"
   creationTimestamp: null
   labels:
     appstudio.openshift.io/application: testrepo
     appstudio.openshift.io/component: testrepo
     pipelines.appstudio.openshift.io/type: build
-  name: testrepo-on-push
+  name: testrepo-on-pull-request
   namespace: default-tenant
 spec:
   params:
@@ -26,7 +27,9 @@ spec:
     - name: revision
       value: '{{revision}}'
     - name: output-image
-      value: registry-service.kind-registry/testrepo:{{revision}}
+      value: registry-service.kind-registry/testrepo:on-pr-{{revision}}
+    - name: image-expires-after
+      value: 5d
     - name: dockerfile
       value: Dockerfile
   pipelineSpec:
